@@ -1,0 +1,11 @@
+CMakeFiles/
+CMakeCache.txt
+build/
+*.o
+*.out
+cmake_install.cmake
+CMakeScripts/
+Makefile
+code
+diff_output.txt
+scm.out

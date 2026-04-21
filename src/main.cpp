@@ -45,21 +45,32 @@ bool isExplicitVoidCall(Expr expr) {
     return false;
 }
 
+extern Assoc *globalEnvPtr;
+
 void REPL(){
     // read - evaluation - print loop
     Assoc global_env = empty();
+    globalEnvPtr = &global_env;
     while (1){
         #ifndef ONLINE_JUDGE
             std::cout << "scm> ";
         #endif
         Syntax stx = readSyntax(std :: cin); // read
+        if (std::cin.eof()) break;
         try{
             Expr expr = stx -> parse(global_env); // parse
             // stx -> show(std :: cout); // syntax print
             Value val = expr -> eval(global_env);
             if (val -> v_type == V_TERMINATE)
                 break;
-            val -> show(std :: cout); // value print
+            // Suppress Void output unless it was an explicit (void) call
+            if (val -> v_type == V_VOID && !isExplicitVoidCall(expr)) {
+                // no output
+            } else {
+                val -> show(std :: cout); // value print
+                puts("");
+            }
+            continue;
         }
         catch (const RuntimeError &RE){
             // std :: cout << RE.message();
