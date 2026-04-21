@@ -37,7 +37,7 @@ bool isExplicitVoidCall(Expr expr) {
     Cond* cond_expr = dynamic_cast<Cond*>(expr.get());
     if (cond_expr != nullptr) {
         for (const auto& clause : cond_expr->clauses) {
-            if (clause.size() > 1 && isExplicitVoidCall(clause.back())) {
+            if (clause.size() >= 1 && isExplicitVoidCall(clause.back())) {
                 return true;
             }
         }
