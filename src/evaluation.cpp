@@ -611,10 +611,18 @@ Value Define::eval(Assoc &env) {
     if (primitives.count(var) || reserved_words.count(var)) {
         throw RuntimeError("define: cannot redefine primitive or reserved word: " + var);
     }
-    // Create placeholder for recursion, then update
-    env = extend(var, NullV(), env);
-    Value v = e->eval(env);
-    modify(var, v, env);
+    // Check if variable already exists in env (redefine semantics)
+    Value existing = find(var, env);
+    if (existing.get() != nullptr) {
+        // Rebind: just update in place
+        Value v = e->eval(env);
+        modify(var, v, env);
+    } else {
+        // Create placeholder for recursion, then update
+        env = extend(var, NullV(), env);
+        Value v = e->eval(env);
+        modify(var, v, env);
+    }
     return VoidV();
 }
 
