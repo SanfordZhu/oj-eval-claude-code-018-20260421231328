@@ -152,6 +152,10 @@ Value Var::eval(Assoc &e) {
                     std::vector<std::string> p = {"x"};
                     return ProcedureV(p, Expr(new IsList(new Var("x"))), env);
                 }
+                case E_EQ: {
+                    std::vector<std::string> p;
+                    return ProcedureV(p, Expr(new EqualVar({})), env);
+                }
                 case E_LT: {
                     std::vector<std::string> p;
                     return ProcedureV(p, Expr(new LessVar({})), env);
@@ -603,6 +607,10 @@ Value Apply::eval(Assoc &e) {
 }
 
 Value Define::eval(Assoc &env) {
+    // define is not allowed to overlap with primitives/reserved_words
+    if (primitives.count(var) || reserved_words.count(var)) {
+        throw RuntimeError("define: cannot redefine primitive or reserved word: " + var);
+    }
     // Create placeholder for recursion, then update
     env = extend(var, NullV(), env);
     Value v = e->eval(env);
@@ -639,12 +647,20 @@ Value Letrec::eval(Assoc &env) {
 }
 
 Value Set::eval(Assoc &env) {
-    // Verify variable exists
+    // Verify variable exists (check env first, then global fallback)
     Value existing = find(var, env);
+    bool inGlobal = false;
+    if (existing.get() == nullptr && globalEnvPtr != nullptr) {
+        existing = find(var, *globalEnvPtr);
+        if (existing.get() != nullptr) inGlobal = true;
+    }
     if (existing.get() == nullptr) throw RuntimeError("set!: variable not defined: " + var);
     // Evaluate and modify
     Value v = e->eval(env);
     modify(var, v, env);
+    if (inGlobal && globalEnvPtr != nullptr) {
+        modify(var, v, *globalEnvPtr);
+    }
     return VoidV();
 }
 
